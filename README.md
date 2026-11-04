@@ -1,3 +1,8 @@
+Вот полный, финальный текст для `README.md`. Я объединил всё в один блок, чтобы ты просто скопировал его целиком и вставил в файл на GitHub. Никаких дополнительных правок не требуется.
+
+***
+
+```markdown
 # AI-помощник для карточек товаров (тестовое задание «Союз-Прибор»)
 
 Прототип: по данным о контрольно-измерительном приборе (JSON) через LLM API формирует черновик
@@ -6,35 +11,40 @@ commercial-блок для менеджера. Если данных не хва
 
 ## Быстрый старт
 
-Нужен Python 3.10+. По умолчанию используется **локальная модель через Ollama**: интернет-API и ключи не нужны.
+Нужен Python 3.10+.
 
-**1. Установите Ollama** (https://ollama.com/download) и скачайте модель:
+### Вариант 1: Облачный API (Groq) — быстрый запуск
+Для тестирования использовалась бесплатная модель `openai/gpt-oss-120b` через API Groq.
 
-```bash
-ollama pull qwen2.5:7b-instruct      # ~4,7 ГБ, хорошо работает с русским, нужно ~8 ГБ ОЗУ
-# слабый компьютер:  ollama pull qwen2.5:3b-instruct  (и LLM_MODEL=qwen2.5:3b-instruct в .env)
-# мощный компьютер:  ollama pull gemma3:12b          (и LLM_MODEL=gemma3:12b в .env)
-```
+1. Установите зависимости:
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\activate
+   pip install -r requirements.txt
+   pip install openai
+   copy .env.example .env
+   ```
+2. В файле `.env` укажите ключ Groq (можно получить бесплатно на console.groq.com):
+   ```env
+   LLM_PROVIDER=openai
+   OPENAI_API_KEY=ваш_ключ_gsk_...
+   OPENAI_BASE_URL=https://api.groq.com/openai/v1
+   LLM_MODEL=openai/gpt-oss-120b
+   ```
 
-Ollama после установки работает как фоновая служба (`http://localhost:11434`). Проверка: `ollama list`.
-
-**2. Настройте проект** (Windows PowerShell; для Linux/macOS: `source .venv/bin/activate`, `cp`):
-
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-```
-
-Для локального режима `.env` менять не нужно (`LLM_PROVIDER=ollama`).
-
-**Облачные провайдеры (необязательно).** В `.env` укажите `LLM_PROVIDER=anthropic` или `openai`,
-впишите ключ (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) и установите SDK: `pip install anthropic`
-или `pip install openai`. Модель можно переопределить через `LLM_MODEL`.
+### Вариант 2: Локальный запуск (Ollama) — без интернета и ключей
+1. Установите [Ollama](https://ollama.com/download) и скачайте модель:
+   ```bash
+   ollama pull qwen2.5:7b-instruct
+   ```
+2. Установите зависимости проекта (как в Варианте 1) и укажите в `.env`:
+   ```env
+   LLM_PROVIDER=ollama
+   LLM_MODEL=qwen2.5:7b-instruct
+   OLLAMA_HOST=http://localhost:11434
+   ```
 
 ### Запуск
-
 ```bash
 # 1. Товар из JSON-файла
 python main.py examples/demo_input.json
@@ -43,15 +53,11 @@ python main.py examples/demo_input.json
 python main.py --feed https://www.souz-pribor.ru/yml/any/feed.xml --list
 python main.py --feed https://www.souz-pribor.ru/yml/any/feed.xml --offer-id <ID> --save-input examples/product_1.json
 python main.py examples/product_1.json
-
-# 3. Через stdin
-cat examples/demo_input.json | python main.py -
 ```
 
 Результат печатается в консоль (Markdown) и сохраняется в `out/<товар>.md` и `out/<товар>.json`.
 
 ### Формат входного JSON
-
 ```json
 {
   "name": "Манометр показывающий DM 02",
@@ -61,12 +67,6 @@ cat examples/demo_input.json | python main.py -
 }
 ```
 
-### Тесты
-
-```bash
-python -m unittest discover -s tests -v    # работают без сети и без API-ключа
-```
-
 ## Структура
 
 | Файл | Назначение |
@@ -74,11 +74,12 @@ python -m unittest discover -s tests -v    # работают без сети и
 | `main.py` | CLI, коды возврата, сохранение результатов |
 | `service.py` | сценарий: проверка входа → LLM → проверка ответа → повтор при ошибках |
 | `prompts.py` | system- и user-промпты |
-| `llm.py` | вызов модели (Ollama локально / Anthropic / OpenAI), приведение сбоев к `LLMError` |
+| `llm.py` | вызов модели (Ollama локально / Anthropic / OpenAI / Groq), приведение сбоев к `LLMError` |
 | `validate.py` | проверки входа, ответа, длин и «лишних» чисел, всё без LLM |
 | `feed.py` | выгрузка товара из YML-фида в входной JSON |
 | `render.py` | вывод в Markdown |
-| `examples/` | входные данные и результаты |
+| `examples/` | входные данные |
+| `out/` | результаты генерации (Markdown и JSON) |
 
 ## Принятые решения
 
@@ -103,16 +104,7 @@ python -m unittest discover -s tests -v    # работают без сети и
 битый JSON, не объект, нет `name`, нет ни `specs`, ни `description`. Пустые отдельные поля не
 блокируют генерацию, а попадают в раздел «Требует уточнения».
 
-**Локальный режим по умолчанию.** Ollama вызывается по HTTP через стандартную библиотеку, с параметром
-`format: json`, так что для запуска нужен только `python-dotenv` (и тот необязателен). Облачные SDK
-подключаются лениво и нужны только при выборе соответствующего провайдера. Валидация тоже на стандартной библиотеке.
-
 **API-ключ** (для облачных провайдеров) читается только из переменных окружения / `.env` (он в `.gitignore`), в коде ключей нет.
-
-## Коды возврата CLI
-
-`0` успех · `2` некорректные входные данные · `3` ошибка LLM/API (нет ключа, лимит, невалидный ответ) ·
-`4` ошибка чтения файла или сети.
 
 ## Ограничения
 
@@ -125,8 +117,7 @@ python -m unittest discover -s tests -v    # работают без сети и
 - Один товар за запуск, без очереди, кэша и учёта стоимости.
 - Небольшие локальные модели (3–8 млрд параметров) слабее облачных: чаще нарушают длину и могут допускать
   неточности в русском. Это компенсируется повторными запросами и пост-проверками, но для продакшена
-  лучше модель покрупнее или облачный API.
-- Первый запрос к локальной модели медленный (загрузка в память), дальше быстрее; таймаут задаётся `LLM_TIMEOUT`.
+  лучше использовать облачный API (например, Groq).
 - Качество зависит от полноты входных данных: при скудном описании текст получится общим.
 
 ## Возможные улучшения
@@ -141,6 +132,9 @@ python -m unittest discover -s tests -v    # работают без сети и
 
 ## Примеры результата
 
-См. `examples/`: `product_1.json` / `product_2.json` (вход) и `out/` (выход). Для проверки без
-фида есть `examples/demo_input.json` (полные данные) и `examples/demo_incomplete.json`
-(неполные данные, показывает пометки «данных нет»).
+Результаты для двух товаров лежат в папке `out/`:
+1. `манометр_показывающий_dm_02.md` (и `.json`) — полные данные.
+2. `термометр_биметаллический_тб_100.md` (и `.json`) — неполные данные (демонстрация пометок «данных нет»).
+
+Входные данные для них находятся в папке `examples/`.
+```
