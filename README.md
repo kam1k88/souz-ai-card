@@ -25,6 +25,7 @@ commercial-блок для менеджера. Если данных не хва
    OPENAI_API_KEY=ваш_ключ_gsk_...
    OPENAI_BASE_URL=https://api.groq.com/openai/v1
    LLM_MODEL=openai/gpt-oss-120b
+<img width="1920" height="1032" alt="image" src="https://github.com/user-attachments/assets/c55f1a47-29f1-4e4c-ada3-ab06554f69b9" />
 
 ### Вариант 2: Локальный запуск (Ollama) — без интернета и ключей
 1. Установите [Ollama](https://ollama.com/download) и скачайте модель:
